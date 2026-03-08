@@ -64,6 +64,128 @@ function lp_ajax_get_orders() {
 	) );
 }
 
+/* =========================================================
+   STOCK
+   ========================================================= */
+
+/**
+ * Obtener productos variables con sus variaciones y stock.
+ */
+add_action( 'wp_ajax_lp_get_stock', 'lp_ajax_get_stock' );
+function lp_ajax_get_stock() {
+	check_ajax_referer( 'lp_nonce', 'nonce' );
+
+	if ( ! current_user_can( 'manage_woocommerce' ) ) {
+		wp_send_json_error( array( 'message' => 'Sin permisos' ), 403 );
+	}
+
+	$search = isset( $_GET['search'] ) ? sanitize_text_field( wp_unslash( $_GET['search'] ) ) : '';
+
+	$args = array(
+		'type'    => 'variable',
+		'status'  => 'publish',
+		'limit'   => 200,
+		'orderby' => 'name',
+		'order'   => 'ASC',
+	);
+
+	if ( $search !== '' ) {
+		$args['s'] = $search;
+	}
+
+	$products = wc_get_products( $args );
+	$result   = array();
+
+	foreach ( $products as $product ) {
+		$variations = array();
+
+		foreach ( $product->get_children() as $variation_id ) {
+			$variation = wc_get_product( $variation_id );
+			if ( ! $variation || ! $variation->exists() ) {
+				continue;
+			}
+
+			$attrs = array();
+			foreach ( $variation->get_variation_attributes() as $attr_key => $attr_value ) {
+				$clean_key = str_replace( 'attribute_', '', $attr_key );
+				$label     = wc_attribute_label( $clean_key, $product );
+
+				if ( taxonomy_exists( $clean_key ) ) {
+					$term    = get_term_by( 'slug', $attr_value, $clean_key );
+					$display = $term ? $term->name : $attr_value;
+				} else {
+					$display = $attr_value;
+				}
+
+				$attrs[] = array( 'label' => $label, 'value' => $display );
+			}
+
+			$stock = $variation->get_stock_quantity();
+
+			$variations[] = array(
+				'id'             => $variation->get_id(),
+				'attributes'     => $attrs,
+				'sku'            => $variation->get_sku(),
+				'stock_quantity' => is_null( $stock ) ? 0 : (int) $stock,
+				'in_stock'       => $variation->is_in_stock(),
+			);
+		}
+
+		if ( empty( $variations ) ) {
+			continue;
+		}
+
+		$result[] = array(
+			'id'         => $product->get_id(),
+			'name'       => $product->get_name(),
+			'variations' => $variations,
+		);
+	}
+
+	wp_send_json_success( array( 'products' => $result ) );
+}
+
+/**
+ * Actualizar stock de una variación via AJAX.
+ */
+add_action( 'wp_ajax_lp_update_stock', 'lp_ajax_update_stock' );
+function lp_ajax_update_stock() {
+	check_ajax_referer( 'lp_nonce', 'nonce' );
+
+	if ( ! current_user_can( 'manage_woocommerce' ) ) {
+		wp_send_json_error( array( 'message' => 'Sin permisos' ), 403 );
+	}
+
+	$variation_id = isset( $_POST['variation_id'] ) ? absint( $_POST['variation_id'] ) : 0;
+	$new_stock    = isset( $_POST['stock'] ) ? intval( $_POST['stock'] ) : 0;
+
+	if ( ! $variation_id ) {
+		wp_send_json_error( array( 'message' => 'ID no proporcionado' ), 400 );
+	}
+
+	$variation = wc_get_product( $variation_id );
+	if ( ! $variation ) {
+		wp_send_json_error( array( 'message' => 'Variación no encontrada' ), 404 );
+	}
+
+	// Activar gestión de stock si no estaba habilitada
+	if ( ! $variation->managing_stock() ) {
+		$variation->set_manage_stock( true );
+		$variation->save();
+	}
+
+	$result = wc_update_product_stock( $variation, $new_stock, 'set' );
+
+	// Sincronizar estado de stock del producto padre
+	WC_Product_Variable::sync_stock_status( $variation->get_parent_id() );
+
+	wp_send_json_success( array( 'stock' => (int) $result ) );
+}
+
+/* =========================================================
+   PEDIDOS — actualizar estado
+   ========================================================= */
+
 /**
  * Actualizar estado de un pedido via AJAX.
  */

@@ -1,6 +1,180 @@
 /* =========================================================
-   Listado Pedidos — Admin styles
+   Listado Pedidos — Admin styles  v1.1.0
    ========================================================= */
+
+/* =========================================================
+   PÁGINA DE STOCK
+   ========================================================= */
+
+.lp-stock-wrap {
+	max-width: 1200px;
+}
+
+/* Tarjeta de producto */
+.lp-stock-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+	margin-bottom: 20px;
+	box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.lp-stock-product-name {
+	margin: 0;
+	padding: 12px 16px;
+	font-size: 14px;
+	border-bottom: 1px solid #e0e0e0;
+	background: #f6f7f7;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+/* Badge "N sin stock" en el título del producto */
+.lp-stock-warn-badge {
+	display: inline-block;
+	background: #f0c33c;
+	color: #5c3f00;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 8px;
+	border-radius: 10px;
+}
+
+/* Tabla de variaciones */
+.lp-stock-table {
+	border: none !important;
+	box-shadow: none !important;
+}
+
+.lp-stock-table th,
+.lp-stock-table td {
+	padding: 8px 14px;
+	vertical-align: middle;
+}
+
+.lp-stock-table thead th {
+	background: #fafafa;
+	font-size: 12px;
+	color: #646970;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .4px;
+}
+
+/* Chip de talla */
+.lp-size-chip {
+	display: inline-block;
+	background: #2271b1;
+	color: #fff;
+	font-weight: 700;
+	font-size: 12px;
+	padding: 3px 10px;
+	border-radius: 12px;
+	min-width: 32px;
+	text-align: center;
+}
+
+.lp-size-chip-empty {
+	background: #d63638;
+}
+
+/* Celda de stock */
+.lp-stock-td {
+	white-space: nowrap;
+	width: 160px;
+}
+
+.lp-stock-input {
+	width: 72px !important;
+	text-align: center;
+	font-size: 14px !important;
+	font-weight: 600;
+	border: 1px solid #8c8f94 !important;
+	border-radius: 3px;
+	padding: 4px 6px !important;
+	transition: border-color .15s;
+}
+
+.lp-stock-input:focus {
+	border-color: #2271b1 !important;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+.lp-stock-input.lp-stock-zero {
+	border-color: #d63638 !important;
+	color: #d63638;
+	background: #fff5f5;
+}
+
+/* Estado de guardado */
+.lp-save-status {
+	display: inline-block;
+	margin-left: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	vertical-align: middle;
+	min-width: 20px;
+}
+
+.lp-saving {
+	color: #646970;
+}
+
+.lp-saved {
+	color: #00a32a;
+}
+
+.lp-save-error {
+	color: #d63638;
+	font-weight: normal;
+	font-size: 11px;
+}
+
+/* Celda de botones de ajuste */
+.lp-adj-td {
+	white-space: nowrap;
+	width: 240px;
+}
+
+.lp-adj {
+	display: inline-block;
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+	padding: 4px 8px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	margin-right: 3px;
+	color: #3c434a;
+	transition: background .12s, border-color .12s, color .12s;
+}
+
+.lp-adj:hover {
+	background: #e0e0e0;
+	border-color: #8c8f94;
+}
+
+.lp-adj-add {
+	background: #e8f5e9;
+	border-color: #a5d6a7;
+	color: #1b5e20;
+}
+
+.lp-adj-add:hover {
+	background: #c8e6c9;
+	border-color: #81c784;
+}
+
+/* SKU monospace */
+.lp-mono {
+	font-family: monospace;
+	font-size: 12px;
+	color: #646970;
+}
 
 /* Layout general */
 .lp-wrap h1 {

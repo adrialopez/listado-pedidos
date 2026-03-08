@@ -3,7 +3,7 @@
  * Plugin Name: Listado Pedidos
  * Plugin URI:  https://adria-lopez.com
  * Description: Panel de gestión de pedidos WooCommerce integrado en el admin de WordPress.
- * Version:     1.0.0
+ * Version:     1.1.0
  * Author:      Adrià López
  * Author URI:  https://adria-lopez.com
  * License:     GPL-2.0+
@@ -15,57 +15,92 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'LP_VERSION', '1.0.0' );
+define( 'LP_VERSION', '1.1.0' );
 define( 'LP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'LP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 require_once LP_PLUGIN_DIR . 'includes/ajax-handlers.php';
+require_once LP_PLUGIN_DIR . 'includes/stock-page.php';
 
 /**
- * Registrar la página de administración bajo el menú de WooCommerce.
+ * Registrar páginas de administración bajo el menú de WooCommerce.
  */
 add_action( 'admin_menu', function () {
+	// Burbuja con pedidos en "processing"
+	$processing = wc_orders_count( 'processing' );
+	$bubble     = '';
+	if ( $processing > 0 ) {
+		$bubble = ' <span class="awaiting-mod count-' . $processing . '"><span class="processing-count">' . $processing . '</span></span>';
+	}
+
 	add_submenu_page(
 		'woocommerce',
 		__( 'Listado Pedidos', 'listado-pedidos' ),
-		__( 'Listado Pedidos', 'listado-pedidos' ),
+		__( 'Listado Pedidos', 'listado-pedidos' ) . $bubble,
 		'manage_woocommerce',
 		'listado-pedidos',
 		'lp_render_page'
 	);
+
+	add_submenu_page(
+		'woocommerce',
+		__( 'Stock de Productos', 'listado-pedidos' ),
+		__( 'Stock de Productos', 'listado-pedidos' ),
+		'manage_woocommerce',
+		'lp-stock',
+		'lp_render_stock_page'
+	);
 } );
 
 /**
- * Cargar assets solo en nuestra página.
+ * Cargar assets según la página activa.
  */
 add_action( 'admin_enqueue_scripts', function ( $hook ) {
-	if ( 'woocommerce_page_listado-pedidos' !== $hook ) {
-		return;
+	// CSS compartido
+	if ( in_array( $hook, array( 'woocommerce_page_listado-pedidos', 'woocommerce_page_lp-stock' ), true ) ) {
+		wp_enqueue_style(
+			'lp-admin',
+			LP_PLUGIN_URL . 'assets/css/admin.css',
+			array(),
+			LP_VERSION
+		);
 	}
 
-	wp_enqueue_style(
-		'lp-admin',
-		LP_PLUGIN_URL . 'assets/css/admin.css',
-		array(),
-		LP_VERSION
-	);
+	// JS — página de pedidos
+	if ( 'woocommerce_page_listado-pedidos' === $hook ) {
+		wp_enqueue_script(
+			'lp-admin',
+			LP_PLUGIN_URL . 'assets/js/admin.js',
+			array(),
+			LP_VERSION,
+			true
+		);
 
-	wp_enqueue_script(
-		'lp-admin',
-		LP_PLUGIN_URL . 'assets/js/admin.js',
-		array(),
-		LP_VERSION,
-		true
-	);
+		wp_localize_script( 'lp-admin', 'lpData', array(
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+			'nonce'   => wp_create_nonce( 'lp_nonce' ),
+		) );
+	}
 
-	wp_localize_script( 'lp-admin', 'lpData', array(
-		'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-		'nonce'   => wp_create_nonce( 'lp_nonce' ),
-	) );
+	// JS — página de stock
+	if ( 'woocommerce_page_lp-stock' === $hook ) {
+		wp_enqueue_script(
+			'lp-stock',
+			LP_PLUGIN_URL . 'assets/js/stock.js',
+			array(),
+			LP_VERSION,
+			true
+		);
+
+		wp_localize_script( 'lp-stock', 'lpData', array(
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+			'nonce'   => wp_create_nonce( 'lp_nonce' ),
+		) );
+	}
 } );
 
 /**
- * Renderizar la página del plugin.
+ * Renderizar la página de pedidos.
  */
 function lp_render_page() {
 	?>
